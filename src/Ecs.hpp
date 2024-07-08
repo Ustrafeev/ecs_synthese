@@ -19,7 +19,7 @@ class ECS {
         using freset_type = std::function<void(const Entity &)>;
     public :
         ECS () ;
-        ~ ECS () = default ;
+        ~ECS () = default ;
         template <class Component >
         auto register_component () -> SparseArray < Component > &;
 

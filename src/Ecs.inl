@@ -27,9 +27,10 @@ auto ECS::register_component() -> SparseArray<Component>&
 template <class Component>
 auto ECS::get_components() -> SparseArray<Component>&
 {
-    std::type_index index(typeid(Component));
+    auto index = std::type_index(typeid(Component));
+    //std::type_index index(typeid(Component));
     // if (_components_arrays.find(index) != _components_arrays.end())
-    return std::any_cast<SparseArray<Component>&>(_components_arrays[index]);
+    return std::any_cast<SparseArray<Component>&>(_components_arrays.at(index));
 }
 
 template <class Component>
@@ -65,23 +66,21 @@ inline auto ECS::kill_entity(const Entity & entity) -> void
 template <typename Component>
 auto ECS::add_component(Entity const & to, Component && c) -> typename SparseArray<Component >::reference_type
 {
-    SparseArray<Component> temp = get_components<Component>();
-    temp.insert_at(to, c);
-    return temp;
+    SparseArray<Component> &temp = get_components<Component>();
+    return temp.insert_at(to, c);
 }
 
 template <typename Component , typename ... Params >
 auto ECS::emplace_component(Entity const & to, Params &&... p) -> typename SparseArray<Component>:: reference_type
 {
-    SparseArray<Component> temp = get_components<Component>();
-    temp.emplace_at(to, p ...);
-    return temp;
+    SparseArray<Component> &temp = get_components<Component>();
+    return temp.emplace_at(to, p ...);
 }
 
 template <typename Component>
 auto ECS::remove_component(Entity const & from) -> void
 {
-    SparseArray<Component> temp = get_components<Component>();
+    SparseArray<Component> &temp = get_components<Component>();
     temp.erase(from);
     return;
 }
