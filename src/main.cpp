@@ -11,24 +11,22 @@
 #include "Ecs.hpp"
 #include "Position.hpp"
 
-void logging_system(ECS & r)
+void logging_system ( ECS &r ,
+    SparseArray < component :: position > const & positions ,
+    SparseArray < component :: velocity > const & velocities )
 {
-    // std::
-    auto const & positions = r.get_components<component::position>() ;
-    auto const & velocities = r.get_components<component::velocity>() ;
-    std::cout<<positions.size()<<std::endl;
-    std::cout<<velocities.size()<<std::endl;
-    for ( size_t i = 0; i < positions.size() && i < velocities.size(); ++i) {
-        auto const &pos = positions[i];
-        auto const &vel = velocities[i];
-        if (pos && vel) {
-            std :: cerr << i << ": Position = { " << pos.value().x << ", "
-            << pos.value().y << " } , Velocity = { "
-            << vel.value().vx << ", " << vel.value().vy << " }"
-            << std::endl ;
+    for ( size_t i = 0; i < positions . size () && i < velocities . size () ; ++ i ) {
+        auto const & pos = positions [ i ];
+        auto const & vel = velocities [ i ];
+        if ( pos && vel ) {
+            std :: cerr << i << " : Position = { " << pos . value () . x << ", "
+            << pos . value () . y << " } , Velocity = { "
+            << vel . value () . vx << ", " << vel . value () . vy << " }"
+            << std :: endl ;
         }
     }
 }
+
 
 int main(void)
 {

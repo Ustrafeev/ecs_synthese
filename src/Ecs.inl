@@ -84,3 +84,30 @@ auto ECS::remove_component(Entity const & from) -> void
     temp.erase(from);
     return;
 }
+
+
+template <class ... Components , typename System>
+auto ECS::add_system( System && system ) -> void
+{
+    _systems.push_back(system);
+    return;
+}
+
+template <class ... Components , typename System>
+auto ECS::add_system ( System & system ) -> void
+{
+    _systems.push_back(system);
+    return;
+}
+
+// template <class ... Components , typename System >
+// auto ECS::subscibe ( const System & system ) -> void
+// {
+//     return;
+// }
+
+auto ECS::run_systems(void) -> void
+{
+    for (auto &sys : _systems)
+        sys(*this);
+}

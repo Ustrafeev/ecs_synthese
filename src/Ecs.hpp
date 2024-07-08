@@ -17,6 +17,8 @@
 class ECS {
     public :
         using freset_type = std::function<void(const Entity &)>;
+        using system_type = std::function<void(ECS &)>;
+        using systems_type = std::vector<system_type>;
     public :
         ECS () ;
         ~ECS () = default ;
@@ -40,13 +42,26 @@ class ECS {
         auto emplace_component ( Entity const & to , Params &&... p ) ->
             typename SparseArray < Component >:: reference_type ;
 
-        template <typename Component>
-        auto remove_component (Entity const & from) -> void ;
+        template <typename Component> auto remove_component (Entity const & from) -> void;
+
+        template <class ... Components , typename System>
+        auto add_system ( System && system ) -> void ;
+
+        template <class ... Components , typename System>
+        auto add_system ( System & system ) -> void ;
+
+        template <class ... Components , typename System >
+        auto subscibe ( const System & system ) -> void ;
+
+        auto run_systems(void) -> void ;
+
     private :
         std::size_t _nb_entities;
         std::unordered_map<std::type_index, std::any>_components_arrays ;
         std::list<Entity> _dead_entities;
         std::vector<freset_type> _freset_entity_components ;
+        systems_type _systems ;
+
 };
 
 
