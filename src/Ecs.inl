@@ -86,28 +86,57 @@ auto ECS::remove_component(Entity const & from) -> void
 }
 
 
-template <class ... Components , typename System>
-auto ECS::add_system( System && system ) -> void
+template <class Event>
+auto ECS::register_event () -> void
 {
-    _systems.push_back(system);
+    auto type = std::type_index(typeid(Event));
+
+    _events[type] = systems_type<Event>();
     return;
 }
-
-template <class ... Components , typename System>
-auto ECS::add_system ( System & system ) -> void
+template <class Event >
+auto ECS::get_events() -> systems_type < Event > &
 {
-    _systems.push_back(system);
-    return;
+    auto index = std::type_index(typeid(Event));
+    return std::any_cast<systems_type<Event> &>(_events.at(index));
 }
 
-// template <class ... Components , typename System >
-// auto ECS::subscibe ( const System & system ) -> void
-// {
-//     return;
-// }
-
-auto ECS::run_systems(void) -> void
+template <class Event >
+auto ECS::get_events() const -> const systems_type < Event > &
 {
-    for (auto &sys : _systems)
-        sys(*this);
+    auto index = std::type_index(typeid(Event));
+    return std::any_cast<const systems_type<Event> &>(_events.at(index));
+}
+
+template <class Event, class... Components, typename System>
+auto ECS::subscribe(System &&system) -> void
+{
+    auto &events = get_events<Event>();
+    events.push_back(std::forward<System>(system));
+}
+
+template <class Event>
+auto ECS::post(const Event &event) -> void
+{
+    auto &events = get_events<Event>();
+    _callback_pool.push_back([this, &events, &event]() {
+        for (auto &system : events) {
+            system(*this, event);
+        }
+    });
+}
+
+auto ECS::front(void) -> const callback_type &
+{
+    return _callback_pool.front();
+}
+
+auto ECS::pop_front(void) -> void
+{
+    _callback_pool.pop_front();
+}
+
+auto ECS::empty(void) const -> bool
+{
+    return _callback_pool.empty();
 }
