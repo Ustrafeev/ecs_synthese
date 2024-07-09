@@ -11,6 +11,12 @@
 #include "Ecs.hpp"
 #include "Position.hpp"
 #include <chrono>
+#include "Entity.hpp"
+#include "Position.hpp"
+#include "Zipper.hpp"
+#include "ZipperIt.hpp"
+#include <iostream>
+#include <chrono>
 
 // void logging_system ( ECS &r ,
 //     SparseArray < component :: position > const & positions ,
@@ -28,6 +34,15 @@
 //     }
 // }
 
+// void logging_system ( ECS &r ,
+// SparseArray < component :: position > const & positions ,
+// SparseArray < component :: velocity > const & velocities )
+// {
+//     for ( auto &&[ i , pos , vel ]:Zipper(positions , velocities ) )
+//     std :: cerr << i << ": Position = { " << pos.value() . x << ", " << pos.value() . y
+//     << " } , Velocity = { " << vel.value().vx << ", " << vel.value().vy << " }" <<
+//     std :: endl ;
+// }
 
 // int main(void)
 // {
@@ -68,55 +83,47 @@
 //     return 0;
 // }
 
-namespace timer = std::chrono;
-struct FrameEvent {
-    FrameEvent(const timer::duration <float > & time_stamp);
-    ~FrameEvent() = default ;
-    timer::duration<float> _time_stamp ;
+struct LoggingEvent {
+    LoggingEvent() = default;
+    ~LoggingEvent() = default;
 };
 
-FrameEvent::FrameEvent(const timer::duration <float > & time_stamp) : _time_stamp(time_stamp) {};
-
-struct QuitEvent {
-    QuitEvent () = default ;
-    ~ QuitEvent () = default ;
-};
-
-int main ( void )
+void logging_system(ECS &, const LoggingEvent &, SparseArray<Component::Position> const &positions, SparseArray<Component::Velocity> const &velocities)
 {
-    ECS ecs ;
-    bool running = true ;
-    unsigned int frame_counter = 0;
-    ecs.register_event<FrameEvent>() ;
-    ecs.register_event<QuitEvent>();
-    ecs.subscribe<QuitEvent>([& running ]( ECS & , const QuitEvent &) -> void { running = false ; }) ;
-    ecs.subscribe < FrameEvent >(
-        []( ECS & , const FrameEvent &) -> void {
-            std :: cout << " Frame !" << std :: endl ;
-    }
-    );
-    const auto FPS = 10;
-    const timer::duration <float , std :: ratio <1 , FPS > > frameRate (1) ;
-    timer::time_point < timer :: steady_clock > current_time ;
-    timer::time_point < timer :: steady_clock > previous_time (timer::steady_clock :: now () ) ;
-    timer::duration <float > dtime = timer :: duration <float >:: zero () ;
-    while ( running ) {
-        current_time = timer :: steady_clock :: now () ;
-        dtime += current_time - previous_time ;
-        previous_time = current_time ;
-        if ( frame_counter > 100) {
-            ecs.post<QuitEvent>(QuitEvent()) ;
-        }
-        if (dtime >= frameRate ) {
-            ecs.post<FrameEvent>(FrameEvent(dtime));
-            ++ frame_counter ;
-            dtime = std :: chrono :: duration <float >:: zero () ;
-        }
-        while (!ecs.empty()) {
-            auto evt = ecs.front();
-            evt();
-            ecs.pop_front();
-        }
+    for (auto &&[i, pos, vel] : Zipper(positions, velocities))
+        std::cerr << i << ": Position = { " << pos.x << ", " << pos.y
+            << " }, Velocity = { " << vel.vx << ", " << vel.vy << " } " <<
+            std::endl;
+}
+
+int main(void)
+{
+    ECS ecs;
+    Entity e;
+    Component::Position pos;
+    Component::Velocity vel;
+
+    pos.x = 30;
+    pos.y = 0;
+    vel.vx = 1;
+    vel.vy = 1;
+
+    ecs.register_component<Component::Position>();
+    ecs.register_component<Component::Velocity>();
+    e = ecs.spawn_entity();
+
+    ecs.add_component<Component::Position>(e, std::move(pos));
+    ecs.emplace_component<Component::Velocity>(e);
+
+    ecs.register_event<LoggingEvent>();
+    ecs.subscribe<LoggingEvent, Component::Position, Component::Velocity>(std::move(logging_system));
+
+    ecs.post<LoggingEvent>(LoggingEvent());
+
+    while (!ecs.empty()) {
+        auto evt = ecs.front();
+        evt();
+        ecs.pop_front();
     }
     return 0;
 }

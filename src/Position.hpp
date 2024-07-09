@@ -9,15 +9,15 @@
 #include <stddef.h>
 
 
-namespace component {
+namespace Component {
 
-class position {
+class Position {
     public:
         int x = 0;
         int y = 0;
 };
 
-class velocity {
+class Velocity {
     public:
         int vx = 0;
         int vy = 0;

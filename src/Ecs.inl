@@ -95,7 +95,7 @@ auto ECS::register_event () -> void
     return;
 }
 template <class Event >
-auto ECS::get_events() -> systems_type < Event > &
+auto ECS::get_events() -> systems_type<Event>&
 {
     auto index = std::type_index(typeid(Event));
     return std::any_cast<systems_type<Event> &>(_events.at(index));
@@ -111,8 +111,27 @@ auto ECS::get_events() const -> const systems_type < Event > &
 template <class Event, class... Components, typename System>
 auto ECS::subscribe(System &&system) -> void
 {
-    auto &events = get_events<Event>();
-    events.push_back(std::forward<System>(system));
+    auto lambda = [this, system](ECS &ecs, const Event &event) {
+        system(ecs, event, get_components<Components>()...);
+    };
+    get_events<Event>().push_back(lambda);
+}
+
+template <class Event , class ... Components , typename System >
+auto ECS::subscribe ( System &system ) -> void
+{
+    auto lambda = [this, system](ECS &ecs, const Event &event) {
+        system(ecs, event, get_components<Components>()...);
+    };
+    get_events<Event>().push_back(lambda);
+}
+template <class Event , class ... Components , typename System >
+auto ECS::subscribe ( const System & system ) -> void
+{
+    auto lambda = [this, system](ECS &ecs, const Event &event) {
+        system(ecs, event, get_components<Components>()...);
+    };
+    get_events<Event>().push_back(lambda);
 }
 
 template <class Event>
